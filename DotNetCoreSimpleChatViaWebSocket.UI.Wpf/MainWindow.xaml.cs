@@ -43,10 +43,10 @@ namespace DotNetCoreSimpleChatViaWebSocket.UI.Wpf
 
         private async void BtnConnect_OnClick(object sender, RoutedEventArgs e)
         {
-            await RunWebSockets();
+            await RunWebSocket();
         }
 
-        private async Task RunWebSockets()
+        private async Task RunWebSocket()
         {
             try
             {
