@@ -1,18 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace DotNetCoreSimpleChatViaWebSocket.Server
 {
@@ -42,28 +38,30 @@ namespace DotNetCoreSimpleChatViaWebSocket.Server
                 ReceiveBufferSize = 4 * 1024
             });
 
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Path.StartsWithSegments(new PathString("/chat")))
-                {
-                    var clientId = Guid.Parse(context.Request.Path.Value.Substring(6));
+            app.Use(HandleWebsocketRequests);
+        }
 
-                    if (context.WebSockets.IsWebSocketRequest)
-                    {
-                        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                        _webSocket.Add(clientId, webSocket);
-                        await Listen(context, webSocket, clientId);
-                    }
-                    else
-                    {
-                        context.Response.StatusCode = 400;
-                    }
+        private async Task HandleWebsocketRequests(HttpContext context, Func<Task> next)
+        {
+            if (context.Request.Path.StartsWithSegments(new PathString("/chat")))
+            {
+                var clientId = Guid.Parse(context.Request.Path.Value.Substring(6));
+
+                if (context.WebSockets.IsWebSocketRequest)
+                {
+                    var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                    _webSocket.Add(clientId, webSocket);
+                    await Listen(context, webSocket, clientId);
                 }
                 else
                 {
-                    await next();
+                    context.Response.StatusCode = 400;
                 }
-            });
+            }
+            else
+            {
+                await next();
+            }
         }
 
         private async Task Listen(HttpContext context, WebSocket webSocket, Guid clientId)
